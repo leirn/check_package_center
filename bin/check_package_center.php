@@ -4,7 +4,7 @@
  * 
  * check_package_center.php
  * 
- * Script to check the status of package upgrades on Synology NAS
+ * Script to check the status of package upgrades on Synology NAS. If so, status is WARNING
  * 
  ************************/
 $debug = false;
@@ -114,8 +114,7 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
     $path = $obj->data->{$api}->path;
 	
 	//list of known tasks
-	$obj = syno_request($server.'/webapi/'.$path.'?api='.$api.'&version=2&method=list&updateSprite=true&blforcereload=false&blloadothers=true&_sid='.$sid);
-	
+	$obj = syno_request($server.'/webapi/'.$path.'?compound=%5B%7B%22api%22%3A%22SYNO.Core.AppNotify%22%2C%22method%22%3A%22get%22%2C%22version%22%3A1%7D%5D&api=SYNO.Entry.Request&method=request&version=1&_sid='.$sid);
 	$status_n = 0; // Service OK
 	
 	$nagios_status = array (
@@ -125,9 +124,12 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
 		3 => "UNKNOWN",
 		);
 	
-	if($obj->data->blupgrade == true) {
-		echo "Packages to be updated: ".implode(", ", $obj->data->blupgrade);
-		$status_n = 2;
+	$qty = $obj->data->result['0']->data->{'SYNO.SDS.PkgManApp.Instance'}->unread;
+	
+	echo "Packages to be updated: $qty";
+	
+	if($qty > 0) {
+		$status_n = 1;
 	}
 	
 	echo "\nOverall packages status is ".$nagios_status[$status_n]."\n";
