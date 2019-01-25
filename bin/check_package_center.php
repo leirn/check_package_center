@@ -123,9 +123,14 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
 		2 => "CRITICAL",
 		3 => "UNKNOWN",
 		);
-	
-	$qty = $obj->data->result['0']->data->{'SYNO.SDS.PkgManApp.Instance'}->unread;
-	
+	try {
+		$qty = $obj->data->result['0']->data->{'SYNO.SDS.PkgManApp.Instance'}->unread;
+	}
+	catch(Exception $e) {
+		echo "Error on url $url : ".$e->getCode()." - ".$e->getMessage();
+		print_r($obj);
+		exit(3);
+	}
 	echo "Packages to be updated: $qty";
 	
 	if($qty > 0) {
