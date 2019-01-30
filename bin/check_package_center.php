@@ -127,7 +127,7 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
 		$qty = $obj->data->result['0']->data->{'SYNO.SDS.PkgManApp.Instance'}->unread;
 	}
 	catch(Exception $e) {
-		echo "Error on url $url : ".$e->getCode()." - ".$e->getMessage();
+		echo "Error: ".$e->getCode()." - ".$e->getMessage();
 		print_r($obj);
 		exit(3);
 	}
