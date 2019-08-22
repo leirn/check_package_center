@@ -114,7 +114,7 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
     $path = $obj->data->{$api}->path;
 	
 	//list of known tasks
-	$obj = syno_request($server.'/webapi/'.$path.'?compound=%5B%7B%22api%22%3A%22SYNO.Core.AppNotify%22%2C%22method%22%3A%22get%22%2C%22version%22%3A1%7D%5D&api=SYNO.Entry.Request&method=request&version=1&_sid='.$sid);
+	$obj = syno_request($server.'/webapi/'.$path.'?blforcereload=false&blloadothers=false&api=SYNO.Core.Package.Server&method=list&version=2&_sid='.$sid);
 	$status_n = 0; // Service OK
 	
 	$nagios_status = array (
@@ -123,23 +123,34 @@ if(!isset($options['p'])) {echo "Password not defined.\n";print_help();exit;} el
 		2 => "CRITICAL",
 		3 => "UNKNOWN",
 		);
-	try {
-		$qty = $obj->data->result['0']->data->{'SYNO.SDS.PkgManApp.Instance'}->unread;
-	}
-	catch(Exception $e) {
-		echo "Error: ".$e->getCode()." - ".$e->getMessage();
-		print_r($obj);
-		exit(3);
-	}
-	echo "Packages to be updated: $qty";
 	
-	if($qty > 0) {
+	$qty = -1;	
+	
+	if($obj->data->blupgrade == false ) {
+		$status_n = 0;
+	}
+	elseif($obj->data->blupgrade == true ) {
 		$status_n = 1;
+		$qty = 0;
+		echo "List of packages to be updated : ";
+		foreach($obj->data->packages as $package) {
+			if($package->blupgrade == true) {
+				$qty ++;
+				echo $package->dname;
+			}
+		}
+		
+		$qty = $obj->data->blupgrade;
+		echo PHP_EOL."Packages to be updated: $qty";
+	}
+	else {
+		echo "Var is " . $obj->data->blupgrade;
+		var_dump($obj->data->blupgrade);
+		$status_n = 3;
 	}
 	
 	echo "\nOverall packages status is ".$nagios_status[$status_n]."\n";
 	
-
 	//Get SYNO.API.Auth Path (recommended by Synology for further update)
     $obj = syno_request($server.'/webapi/query.cgi?api=SYNO.API.Info&method=Query&version=1&query=SYNO.API.Auth');
     $path = $obj->data->{'SYNO.API.Auth'}->path;
